@@ -11,6 +11,7 @@ import json
 from datetime import datetime
 import pymongo
 from werkzeug.utils import secure_filename
+import exifread
 
 
 ##################### Initialize #####################
@@ -34,6 +35,17 @@ logging.info('This will get logged to a file')
 @app.route('/')
 def hello_world():
     return 'Hello World!'
+
+
+##################### Token part #####################
+
+listOfTokens = ['Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE1ODk5NzEyOTgsIm5iZiI6MTU4OTk3MTI5OCwianRpIjoiYTE5MzM2MTUtZmQ5NS00ODFlLWJmY2YtMjkyYTUxZDRiNGU0IiwiZXhwIjoxNTkyNTYzMjk4LCJpZGVudGl0eSI6IlBydWViYSIsImZyZXNoIjpmYWxzZSwidHlwZSI6ImFjY2VzcyJ9.ZJrBt9R0v0ZcKc9kI_6jwFCbRZECvmM6h24jafPx7m8']
+
+@app.before_request
+def before_request():
+    if request.headers['Authorization'] not in listOfTokens :
+        app.logger.warning("Token: %s not valid.", request.headers['Authorization'])
+        return jsonify(error="Token not valid."), 400
 
 
 ##################### observation part #####################
@@ -126,6 +138,10 @@ def post_image():
         app.logger.warning("Extension not admited.")
         return jsonify(error="Extension not admited."), 400
 
+def process_image(filename):
+    f = open(filename, 'rb')
+    tags = exifread.process_file(f)
+    print(tags)
 
 # curl -X POST -F "file=@a.png" localhost:5000/image
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif'])
