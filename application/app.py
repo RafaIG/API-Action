@@ -12,6 +12,8 @@ from datetime import datetime
 import pymongo
 from werkzeug.utils import secure_filename
 import exifread
+import random
+import string
 
 
 ##################### Initialize #####################
@@ -122,18 +124,19 @@ def post_observation():
 
 @app.route('/image', methods=['POST'])
 def post_image():
-    if 'file' not in request.files:
+    if 'image' not in request.files:
         app.logger.warning("Not image send.")
         return jsonify(error="Not image send."), 400 
-    file = request.files['file']
+    file = request.files['image']
     if file.filename == '':
         app.logger.warning("No selected file.")
         return jsonify(error="No selected file."), 400 
+    name = ''.join(random.choices(string.ascii_lowercase + string.ascii_uppercase + string.digits, k=6))
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        app.logger.info("File %s saved properly.",filename)
-        return jsonify(info="File saved properly."), 200 
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], name + filename))
+        app.logger.info("File %s saved properly.",name + filename)
+        return jsonify({'id':name + filename, 'ok': True, 'msg': 'Image created successfully.'}), 201
     else:
         app.logger.warning("Extension not admited.")
         return jsonify(error="Extension not admited."), 400
