@@ -112,6 +112,10 @@ def post_observation():
         return jsonify(error="Failed to decode JSON object."), 400 
     if 'project' not in data:
         return jsonify(error="Not project in the observation."), 400 
+    if 'created_at' not in data:
+        return jsonify(error="Not created_at in the observation."), 400 
+    if 'uploaded_at' not in data:
+        return jsonify(error="Not uploaded_at in the observation."), 400 
     data.update({'created_at':datetime.strptime(data['created_at'],'%Y-%m-%dT%H:%M:%S.%fZ'),
         'uploaded_at':datetime.strptime(data['uploaded_at'],'%Y-%m-%dT%H:%M:%S.%fZ')})
     _id = mongo.db.observation.insert_one(data).inserted_id
