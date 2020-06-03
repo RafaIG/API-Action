@@ -46,11 +46,15 @@ def hello_world():
 listOfTokens = ['Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE1ODk5NzEyOTgsIm5iZiI6MTU4OTk3MTI5OCwianRpIjoiYTE5MzM2MTUtZmQ5NS00ODFlLWJmY2YtMjkyYTUxZDRiNGU0IiwiZXhwIjoxNTkyNTYzMjk4LCJpZGVudGl0eSI6IlBydWViYSIsImZyZXNoIjpmYWxzZSwidHlwZSI6ImFjY2VzcyJ9.ZJrBt9R0v0ZcKc9kI_6jwFCbRZECvmM6h24jafPx7m8',
     'Bearer APiary123456']
 
-#@app.before_request
+@app.before_request
 def before_request():
-    if request.headers['Authorization'] not in listOfTokens :
-        app.logger.warning("Token: %s not valid.", request.headers['Authorization'])
-        return jsonify(error="Token not valid."), 401
+    if request.method == 'POST':
+        if 'Authorization' not in request.headers:
+            app.logger.warning("No auth sended.")
+            return jsonify(error="No auth sended."), 401
+        if request.headers['Authorization'] not in listOfTokens :
+            app.logger.warning("Token: %s not valid.", request.headers['Authorization'])
+            return jsonify(error="Token not valid."), 401
 
 
 ##################### observation part #####################
@@ -104,7 +108,6 @@ def get_observation(observation_id):
 
 @app.route('/observations', methods=['POST'])
 def post_observation():
-    before_request()
     try:
         data = request.get_json(force=True)
     except Exception as e:
@@ -147,7 +150,6 @@ def post_observation():
 
 @app.route('/images', methods=['POST'])
 def post_image():
-    before_request()
     if 'image' not in request.files:
         app.logger.warning("Not image send.")
         return jsonify(warning="Not image send."), 200 
