@@ -46,35 +46,41 @@ def hello_world():
 listOfTokens = ['Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE1ODk5NzEyOTgsIm5iZiI6MTU4OTk3MTI5OCwianRpIjoiYTE5MzM2MTUtZmQ5NS00ODFlLWJmY2YtMjkyYTUxZDRiNGU0IiwiZXhwIjoxNTkyNTYzMjk4LCJpZGVudGl0eSI6IlBydWViYSIsImZyZXNoIjpmYWxzZSwidHlwZSI6ImFjY2VzcyJ9.ZJrBt9R0v0ZcKc9kI_6jwFCbRZECvmM6h24jafPx7m8',
     'Bearer APiary123456']
 
-@app.before_request
+#@app.before_request
 def before_request():
     if request.headers['Authorization'] not in listOfTokens :
         app.logger.warning("Token: %s not valid.", request.headers['Authorization'])
-        return jsonify(error="Token not valid."), 400
+        return jsonify(error="Token not valid."), 401
 
 
 ##################### observation part #####################
 
-@app.route('/observation', methods=['GET'])
-def get_observation():
+@app.route('/observations', methods=['GET'])
+def get_list_observation():
+    limit = request.headers.get('limit')
+    if limit is None:
+           limit = 5
+    page = request.headers.get('page')
+    if page is None:
+           page = 1
+
     day = request.headers.get('day')
     month = request.headers.get('month')
     year = request.headers.get('year')
-    if year is not None:
-        if month is not None:
-            if day is not None:
-                date = datetime(int(year), int(month), int(day), 1)
-            else:
-                date = datetime(int(year), int(month), 1, 1)
-        else:
-            date = datetime(int(year), 1, 1, 1)
-    else:
-        return get_all_observations()
+    if year is None:
+        year = 2000
+    if month is None:
+        month = 1
+    if day is None:
+        day = 1
+    date = datetime(int(year), int(month), int(day), 1)
 
-    limit = request.headers.get('limit')
-    if limit is None:
-           limit = 59
-    observations = mongo.db.observation.find({"uploaded_at": {"$gt": date}}).limit(int(limit))#.sort('uploaded_at',pymongo.DESCENDING)
+    project = request.headers.get('project')
+    if project is None:
+        observations = mongo.db.observation.find({"uploaded_at": {"$gt": date}}).skip(int(limit)*(int(page)-1)).limit(int(limit)).sort('uploaded_at',pymongo.DESCENDING)
+    else:
+        observations = mongo.db.observation.find({"uploaded_at": {"$gt": date},"project":project}).skip(int(limit)*(int(page)-1)).limit(int(limit)).sort('uploaded_at',pymongo.DESCENDING)
+
     output = []
     for ob in observations:
         output.append(ob)
@@ -82,26 +88,30 @@ def get_observation():
     return JSONEncoder().encode(output)
 
 
-@app.route('/observations', methods=['GET']) 
-def get_all_observations():
-    limit = request.headers.get('limit')
-    if limit is None:
-           limit = 5
-    observations = mongo.db.observation.find().limit(int(limit))
-    output = []
-    for observation in observations:
-        output.append(observation) 
-    app.logger.info('Observations send successfully.')
-    return JSONEncoder().encode(output)
+@app.route('/observations/<observation_id>', methods=['GET'])
+def get_observation(observation_id):
+    try:
+        observation = mongo.db.observation.find_one({'_id': ObjectId(observation_id)})
+    except Exception as e:
+        app.logger.warning("Not a correct observation id.")
+        return jsonify(error="Not a correct observation id."), 400
+    if observation is None:
+        app.logger.warning('Observation %s not found.', observation_id)
+        return jsonify({'error': 'Observation ' + observation_id + 'not found.'}), 404
+    app.logger.info('Received %s observation successfully.', observation_id)
+    return JSONEncoder().encode(observation)
 
 
-@app.route('/observation', methods=['POST'])
+@app.route('/observations', methods=['POST'])
 def post_observation():
+    before_request()
     try:
         data = request.get_json(force=True)
     except Exception as e:
         app.logger.warning("Failed to decode JSON object.")
         return jsonify(error="Failed to decode JSON object."), 400 
+    if 'project' not in data:
+        return jsonify(error="Not project in the observation."), 400 
     data.update({'created_at':datetime.strptime(data['created_at'],'%Y-%m-%dT%H:%M:%S.%fZ'),
         'uploaded_at':datetime.strptime(data['uploaded_at'],'%Y-%m-%dT%H:%M:%S.%fZ')})
     _id = mongo.db.observation.insert_one(data).inserted_id
@@ -131,11 +141,12 @@ def post_observation():
 
 ##################### image part #####################
 
-@app.route('/image', methods=['POST'])
+@app.route('/images', methods=['POST'])
 def post_image():
+    before_request()
     if 'image' not in request.files:
         app.logger.warning("Not image send.")
-        return jsonify(error="Not image send."), 400 
+        return jsonify(warning="Not image send."), 200 
     file = request.files['image']
     if file.filename == '':
         app.logger.warning("No selected file.")
