@@ -71,10 +71,10 @@ def get_list_observation():
         return jsonify({'error': str(ex)}), 400
 
     if 'project' in request.args:
-        observations = mongo.db.observation.find({"uploaded_at": {"$gt": begin_date, "$lt":finish_date},
+        observations = mongo.db.observation.find({"created_at": {"$gt": begin_date, "$lt":finish_date},
             "project":request.args.get('project')}).skip(int(limit)*(int(page)-1)).limit(int(limit)).sort('uploaded_at',pymongo.DESCENDING)
     else:
-        observations = mongo.db.observation.find({"uploaded_at": {"$gt": begin_date, 
+        observations = mongo.db.observation.find({"created_at": {"$gt": begin_date, 
             "$lt":finish_date}}).skip(int(limit)*(int(page)-1)).limit(int(limit)).sort('uploaded_at',pymongo.DESCENDING)
 
 
