@@ -8,7 +8,7 @@ from datetime import datetime
 from flask_pymongo import PyMongo, ObjectId
 import logging
 import json
-from datetime import datetime
+from datetime import date,datetime
 import pymongo
 from werkzeug.utils import secure_filename
 import random
@@ -51,7 +51,7 @@ def before_request():
     if request.method == 'POST':
         if 'Authorization' not in request.headers:
             app.logger.warning("No auth sended.")
-            return jsonify(error="No auth sended."), 401
+            return jsonify(error="No auth send."), 401
         if request.headers['Authorization'] not in listOfTokens :
             app.logger.warning("Token: %s not valid.", request.headers['Authorization'])
             return jsonify(error="Token not valid."), 401
@@ -61,29 +61,22 @@ def before_request():
 
 @app.route('/observations', methods=['GET'])
 def get_list_observation():
-    limit = request.headers.get('limit')
-    if limit is None:
-           limit = 5
-    page = request.headers.get('page')
-    if page is None:
-           page = 1
+    limit = request.args.get('limit', default = 5, type=int)
+    page = request.args.get('page', default = 1, type=int)
 
-    day = request.headers.get('day')
-    month = request.headers.get('month')
-    year = request.headers.get('year')
-    if year is None:
-        year = 2000
-    if month is None:
-        month = 1
-    if day is None:
-        day = 1
-    date = datetime(int(year), int(month), int(day), 1)
+    try:
+        begin_date = to_date(request.args.get('begin_date', default = date.min.strftime('%Y-%m-%d')))
+        finish_date = to_date(request.args.get('finish_date', default = date.max.strftime('%Y-%m-%d')))
+    except ValueError as ex:
+        return jsonify({'error': str(ex)}), 400
 
-    project = request.headers.get('project')
-    if project is None:
-        observations = mongo.db.observation.find({"uploaded_at": {"$gt": date}}).skip(int(limit)*(int(page)-1)).limit(int(limit)).sort('uploaded_at',pymongo.DESCENDING)
+    if 'project' in request.args:
+        observations = mongo.db.observation.find({"uploaded_at": {"$gt": begin_date, "$lt":finish_date},
+            "project":request.args.get('project')}).skip(int(limit)*(int(page)-1)).limit(int(limit)).sort('uploaded_at',pymongo.DESCENDING)
     else:
-        observations = mongo.db.observation.find({"uploaded_at": {"$gt": date},"project":project}).skip(int(limit)*(int(page)-1)).limit(int(limit)).sort('uploaded_at',pymongo.DESCENDING)
+        observations = mongo.db.observation.find({"uploaded_at": {"$gt": begin_date, 
+            "$lt":finish_date}}).skip(int(limit)*(int(page)-1)).limit(int(limit)).sort('uploaded_at',pymongo.DESCENDING)
+
 
     output = []
     for ob in observations:
@@ -123,7 +116,7 @@ def post_observation():
         'uploaded_at':datetime.strptime(data['uploaded_at'],'%Y-%m-%dT%H:%M:%S.%fZ')})
     _id = mongo.db.observation.insert_one(data).inserted_id
     app.logger.info('Observation %s generated successfully.', str(_id))
-    return jsonify({'id':str(_id), 'ok': True, 'msg': 'Observation created successfully.'}), 201 
+    return jsonify({'id':str(_id)}), 201 
 
 
 ### Observation example:
@@ -157,12 +150,13 @@ def post_image():
     if file.filename == '':
         app.logger.warning("No selected file.")
         return jsonify(error="No selected file."), 400 
-    name = ''.join(random.choices(string.ascii_lowercase + string.ascii_uppercase + string.digits, k=6))
     if file and allowed_file(file.filename):
+        name = ''.join(random.choices(string.ascii_lowercase + string.ascii_uppercase + string.digits, k=6))
         filename = secure_filename(file.filename)
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], name + filename))
-        app.logger.info("File %s saved properly.",name + filename)
-        return jsonify({'id':name + filename, 'ok': True, 'msg': 'Image created successfully.'}), 201
+        name = date.today().strftime('%Y-%m-%d') + '-' + name + '-' + filename
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], name))
+        app.logger.info("File %s saved properly.",name)
+        return jsonify({'id':name}), 201
     else:
         app.logger.warning("Extension not admited.")
         return jsonify(error="Extension not admited."), 400
@@ -232,4 +226,11 @@ class JSONEncoder(json.JSONEncoder):
         if isinstance(o, ObjectId):
             return str(o)
         return json.JSONEncoder.default(self, o)
+
+
+def to_date(date_string): 
+    try:
+        return datetime.strptime(date_string, '%Y-%m-%d')
+    except ValueError:
+        raise ValueError('{} is not valid date in the format YYYY-MM-DD'.format(date_string))
 
