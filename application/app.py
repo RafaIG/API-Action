@@ -65,7 +65,8 @@ def get_list_observation():
     page = request.args.get('page', default = 1, type=int)
 
     try:
-        begin_date = to_date(request.args.get('begin_date', default = date.min.strftime('%Y-%m-%d')))
+        begin_date = to_date(request.args.get('begin_date', default='1960-01-01'))
+            #default = date.min.strftime('%Y-%m-%d')))
         finish_date = to_date(request.args.get('finish_date', default = date.max.strftime('%Y-%m-%d')))
     except ValueError as ex:
         return jsonify({'error': str(ex)}), 400
