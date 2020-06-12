@@ -151,16 +151,20 @@ def post_image():
     if file.filename == '':
         app.logger.warning("No selected file.")
         return jsonify(error="No selected file."), 400 
-    if file and allowed_file(file.filename):
-        name = ''.join(random.choices(string.ascii_lowercase + string.ascii_uppercase + string.digits, k=6))
-        filename = secure_filename(file.filename)
-        name = date.today().strftime('%Y-%m-%d') + '-' + name + '-' + filename
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], name))
-        app.logger.info("File %s saved properly.",name)
-        return jsonify({'id':name}), 201
-    else:
+    if not allowed_file(file.filename):
         app.logger.warning("Extension not admited.")
         return jsonify(error="Extension not admited."), 400
+    
+    name = ''.join(random.choices(string.ascii_lowercase + string.ascii_uppercase + string.digits, k=6))
+    filename = secure_filename(file.filename)
+    name = date.today().strftime('%Y-%m-%d') + '-' + name + '-' + filename
+    file.save(os.path.join(app.config['UPLOAD_FOLDER'], name))
+    app.logger.info("File %s saved properly.",name)
+    data = {'id':name,'status':'pending','timestamp':datetime.utcnow()}
+    _id = mongo.db.image.insert_one(data).inserted_id
+    app.logger.info('image %s with id in mongodb: %s created successfully.', name, str(_id))
+    return jsonify({'id':name}), 201
+        
 
 @app.route('/test', methods=['POST'])
 def process_image():
