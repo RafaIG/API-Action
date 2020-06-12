@@ -117,6 +117,8 @@ def post_observation():
         'uploaded_at':datetime.strptime(data['uploaded_at'],'%Y-%m-%dT%H:%M:%S.%fZ')})
     _id = mongo.db.observation.insert_one(data).inserted_id
     app.logger.info('Observation %s generated successfully.', str(_id))
+    if 'image' not in data:
+        return jsonify({'id':str(_id),'warning':'no image key in the observarion'}), 201 
     return jsonify({'id':str(_id)}), 201 
 
 
