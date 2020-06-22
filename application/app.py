@@ -217,7 +217,9 @@ def get_geotagging(exif):
 
 
 # curl -X POST -F "file=@a.png" localhost:5000/image
-ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif', 'jfif'])
+ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'jpe', 'gif', 'jfif', 'jif', 
+    'jfi', 'tiff', 'tiff', 'psd', 'pdf', 'eps', 'ai', 'indd', 'raw', 'svg', 
+    'heif', 'webp'])
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS

@@ -10,5 +10,5 @@ MONGO_URI = 'mongodb://192.168.123.245:27017/observation'
 #MONGO_URI = 'mongodb://localhost:27017/observation'
 
 
-ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif'])
+ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'jpe', 'gif', 'jfif', 'jif', 'jfi', 'tiff', 'tiff', 'psd', 'pdf', 'eps', 'ai', 'indd', 'raw', 'svg', 'heif', 'webp'])
 UPLOAD_FOLDER='img/'
