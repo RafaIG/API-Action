@@ -1,0 +1,276 @@
+FORMAT: 1A
+HOST: https://api.actionproject.eu
+
+# action-api
+
+Action-api is a simple API allowing users to send and consult observations for the 
+differents projects of [ACTION](https://actionproject.eu/).
+
+## Observation Collection [/observations?begin_date={begin_date}&finish_date={finish_date}&project={project}&limit={limit}&page={page}]
+
+### List Observations [GET]
+
+Return a list of observations. The list could be filtered by the date (begin and 
+final date) and/or by the project. Additionally with the limit and page headers, 
+you can decide how many observations you want to receive (5 by default).
+
+The response is a list of the requested observations as a list of JSONs.
+
+|Parameter|Description|
+|------|-----------|
+| begin_date | start date for the observation |
+| finish_date | month of the date |
+| project | project of the requested observations |
+| limit | number of observations sent |
+| page | how mant observations skipped |
+
++ Parameters
+    + begin_date (string, optional, `2006-12-24`) ... Date with the format YYYY-MM-DD.
+    + finish_date (string, optional, `2020-09-12`) ... Date with the format YYYY-MM-DD.
+    + project (string, optional, `test`) ... Name of the project. "None" as default.
+    + limit (number, optional, `3`) ... Number of observations requested. 5 as default.
+    + page (number, optional, `1`) ... Number of limit observations skipped. 1 as default.
+    
+    
++ Response 200 (application/json)
+
+        [
+            {
+                "_id": "5ec513864b07544b8fcd789c",
+                "ec5_uuid": "12",
+                "created_at": "2019-10-12 20:57:41.479000",
+                "uploaded_at": "2029-10-12 22:22:46",
+                "title": "e9e7ed13-aa20-4b74-8cd8-521bf7097d16"
+            },
+            {
+                "_id": "5ed78d28585cb2323743a7c8",
+                "test": "yes",
+                "project": "test",
+                "created_at": "2019-10-12 20:57:41.479000",
+                "uploaded_at": "2029-10-12 22:22:46"
+            }
+        ]
+
+### Create a New Observation [POST]
+
+This method will not be able to be tested using Apiary, so as not to obstruct the 
+production environment with wrong data. To access this method, an authorization 
+token is required.
+
+EXPLICAR MEJOR EL BODY
+To create an observation use this action. It takes a JSON object containing the 
+observation's data of the body and save it in the mongo database. The json keys 
+project is required by the API ir order to create the observarion. If the keys:
+created_at and uploaded_at are not sent in the request, the API would create them.
+
+The correct answer is a JSON with the id key created in the mongo 
+database. There are error responses in case the project, created_at 
+and uploaded_at keys are missing and for the wrong authorization tokens.
+
+|Header|Description|
+|------|-----------|
+| Authorization | Token needed to acces this route |
+
++ Request (application/json)
+
+    + Headers
+    
+            Authorization: valid token
+    
+    + Body
+    
+            {
+                "project": "test",
+                "created_at": "2019-10-12T20:57:41.479Z",
+                "uploaded_at": "2029-10-12T22:22:46.000Z"
+            }
+
++ Response 201 (application/json)
+
+    + Body
+
+            {
+                'id': id
+            }
+
++ Response 401 (application/json)
+
+    + Body
+
+            {
+                "error": "No auth sent."
+            }
+
++ Response 400 (application/json)
+
+    + Body
+
+            {
+                "error": "Not project in the observation."
+            }
+
+
+## Specific Observation [/observations/{observation_id}]
+
+### List Observation [GET]
+
+Return a specific observation that correspond with the observation_id. Additionally 
+with the limit and size headers, you can decide how many observations you want to 
+receive (5 by default).
+
+The response is a JSON of the requested observations. If the observation_id is not 
+correct a JSON with an error key will be sent.
+
+
++ Response 200 (application/json)
+
+        {
+            "_id": "5ed78d28585cb2323743a7c8",
+            "test": "yes",
+            "project": "test",
+            "created_at": "2019-10-12 20:57:41.479000",
+            "uploaded_at": "2029-10-12 22:22:46"
+        }
+
++ Response 400 (application/json)
+
+        {
+          "error": "Not a correct observation id."
+        }
+        
+### Update Observation [PUT]
+
+Update a specific observation that correspond with the observation_id, with the 
+keys of the json object of the request.
+
+The response is a JSON of the requested observations. If the observation_id is not 
+correct a JSON with an error key will be sent.
+
+
+|Header|Description|
+|------|-----------|
+| Authorization | Token needed to acces this route |
+
++ Response 200 (application/json)
+
+        {
+            "location": "new_location",
+            "test": "updated"
+        }
+
++ Response 400 (application/json)
+
+        {
+          "error": "Not a correct observation id."
+        }
+
+ 
+## Image Collection [/images?limit={limit}&page={page}]            
+
+### List Images [GET]
+
+Return a list of images. With the limit and page headers, you can decide how many 
+images you want to receive (5 by default).
+
+The response is a list of the requested images as a list of JSONs.
+
+|Parameter|Description|
+|------|-----------|
+| limit | number of observations sent |
+| page | how mant observations skipped |
+
++ Parameters
+    + limit (number, optional, `3`) ... Number of observations requested. 5 as default.
+    + page (number, optional, `1`) ... Number of limit observations skipped. 1 as default.
+    
++ Response 200 (application/json)
+
+        [
+            {
+                "_id": "5ef5e0346dca0a7f6a7521e9",
+                "id": "2020-06-26-tIVHO1-action-street-spectra.jfif",
+                "status": "done",
+                "timestamp": "2020-06-26 11:47:00.617000",
+                "image_info": {
+                    "ImageWidth": 768,
+                    "ImageLength": 1024,
+                    "WhiteBalance": 0,
+                    "ISOSpeedRatings": 320,
+                    "LightSource": 0,
+                    "ExifOffset": 133,
+                    "Flash": 24,
+                    "FocalLength": [
+                        3210,
+                        1000
+                    ],
+                    "Make": "HUAWEI",
+                    "Model": "FIG-LX1",
+                    "Orientation": 0,
+                    "DateTime": "2020:05:23 23:14:08",
+                    "ExposureTime": [
+                        300,
+                        10000
+                    ],
+                    "FNumber": [
+                        22000,
+                        10000
+                    ]
+                }
+            }
+        ]
+
+            
+### Create a New Image [POST]
+
+This method will not be able to be tested using Apiary, so as not to obstruct the 
+production environment with wrong data. To access this method, an authorization 
+token is required.
+
+To create add an image use this action. It takes a image file and saves it in the 
+system.
+
+The correct answer is a JSON with the id key of the image saved, the ok key that is 
+True if everything is correct and an msg key that describes the action. There is
+a 200 response with a warning key in case the image is not sent.
+
+|Header|Description|
+|------|-----------|
+| Authorization | Token needed to acces this route |
+
++ Request (multipart/form-data/json)
+
+    + Headers
+    
+            Authorization: not valid token
+    
+    + Body
+    
+            form:image
+
++ Response 201 (application/json)
+
+    + Body
+
+            {
+                'id': filename,
+                'ok': True,
+                'msg': 'Image created successfully.'
+            }
+              
++ Response 200 (application/json)
+
+    + Body
+
+            {
+                "warning": "Not image send."
+            }
+
++ Response 401 (application/json)
+
+    + Body
+
+            {
+                "error": "No auth send."
+            }
+
+
